@@ -3,6 +3,9 @@ FROM node:24-alpine AS builder
 
 WORKDIR /app
 
+# 安装 Python 和构建工具（编译 better-sqlite3 需要）
+RUN apk add --no-cache python3 make g++
+
 RUN npm config set registry https://registry.npmmirror.com/ && \
     yarn config set registry https://registry.npmmirror.com/
 
@@ -23,8 +26,8 @@ FROM node:24-alpine
 
 WORKDIR /app
 
-# 安装 nginx 和 supervisor
-RUN apk add --no-cache nginx supervisor && \
+# 安装 nginx、supervisor 和构建工具（better-sqlite3 需要）
+RUN apk add --no-cache nginx supervisor python3 make g++ && \
     mkdir -p /var/lib/nginx/logs /var/log/nginx && \
     npm config set registry https://registry.npmmirror.com/ && \
     yarn config set registry https://registry.npmmirror.com/ && \
