@@ -12,7 +12,10 @@ type TableName = keyof DB & string;
 type RowType<TName extends TableName> = DB[TName];
 
 let dbPath: string;
-if (typeof process.versions?.electron !== "undefined") {
+// 优先使用环境变量配置的数据库路径（Docker 部署场景）
+if (process.env.DB_PATH) {
+  dbPath = process.env.DB_PATH;
+} else if (typeof process.versions?.electron !== "undefined") {
   const { app } = require("electron");
   const userDataDir: string = app.getPath("userData");
   dbPath = path.join(userDataDir, "db.sqlite");
