@@ -6,13 +6,21 @@ WORKDIR /app
 # 安装 Python 和构建工具（编译 better-sqlite3 需要）
 RUN apk add --no-cache python3 make g++
 
+# 配置镜像源（npm/yarn + Node.js + Electron + sqlite）
 RUN npm config set registry https://registry.npmmirror.com/ && \
     yarn config set registry https://registry.npmmirror.com/
+
+# 配置二进制下载镜像（解决网络问题）
+ENV NODEJS_ORG_MIRROR=https://npmmirror.com/mirrors/node
+ENV ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
+ENV ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/
+ENV SQLITE_BINARY_SITE=https://npmmirror.com/mirrors/sqlite3
+ENV BETTER_SQLITE3_BINARY_SITE=https://npmmirror.com/mirrors/better-sqlite3
 
 # 复制依赖文件
 COPY package.json yarn.lock ./
 
-RUN yarn install --frozen-lockfile
+RUN yarn install --frozen-lockfile --ignore-optional
 
 # 复制源码
 COPY tsconfig.json ./
@@ -33,6 +41,13 @@ RUN apk add --no-cache nginx supervisor python3 make g++ && \
     yarn config set registry https://registry.npmmirror.com/ && \
     npm install -g pm2
 
+# 配置二进制下载镜像（解决网络问题）
+ENV NODEJS_ORG_MIRROR=https://npmmirror.com/mirrors/node
+ENV ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/
+ENV ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/
+ENV SQLITE_BINARY_SITE=https://npmmirror.com/mirrors/sqlite3
+ENV BETTER_SQLITE3_BINARY_SITE=https://npmmirror.com/mirrors/better-sqlite3
+
 # 复制后端文件
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/package.json ./
@@ -41,8 +56,8 @@ COPY --from=builder /app/yarn.lock ./
 # 复制静态页面到 nginx 目录
 COPY --from=builder /app/scripts/web /usr/share/nginx/html
 
-# 只安装生产依赖
-RUN yarn install --frozen-lockfile --production
+# 只安装生产依赖（跳过可选依赖 electron）
+RUN yarn install --frozen-lockfile --production --ignore-optional
 
 # 配置 nginx
 RUN cat > /etc/nginx/http.d/default.conf << 'EOF'
